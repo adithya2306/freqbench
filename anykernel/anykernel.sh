@@ -28,16 +28,6 @@ ramdisk_compression=auto;
 ## AnyKernel install
 split_boot;
 
-cores=$(grep '^processor' /proc/cpuinfo | wc -l)
-all_cpus=0-$((cores - 1))
-bench_cpus=1-$((cores - 1))
-patch_cmdline rcu_nocbs rcu_nocbs=$all_cpus
-patch_cmdline isolcpus isolcpus=$bench_cpus
-patch_cmdline nohz_full nohz_full=$bench_cpus
-patch_cmdline loglevel loglevel=0
-patch_cmdline printk.devkmsg printk.devkmsg=on
-patch_cmdline skip_initramfs ""
-
 mv $home/rd-new.cpio $home/ramdisk-new.cpio
 
 flash_boot;

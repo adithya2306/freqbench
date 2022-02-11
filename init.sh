@@ -67,6 +67,7 @@ find_part_by_name() {
 
     # Check for existence first
     if [[ -z "$pinfo" ]]; then
+        echo "Partition $1 not found"
         return 1
     fi
 
@@ -172,17 +173,22 @@ try_write /sys/module/qpnp_fg/parameters/sram_update_period_ms 1000
 # On Snapdragon 888 (Qualcomm kernel 5.4) devices and newer, the DSP is
 # responsible for power and charging, so we need to initialize it before we can
 # read power usage from the fuel gauge.
-if uname -r | grep -q '^5\.' && grep -q Qualcomm /proc/cpuinfo; then
+if uname -r | grep -q '^5\.'; then
     # qrtr nameserver is required for DSP services to work properly
     qrtr-ns &
 
     echo "Booting DSP..."
+#    slot="$(cat /proc/cmdline | sed 's/\(.*\)slot_suffix=_\([ab]\)\(.*\)/\2/g')"
+    mkdir /firmware
+    modem_part="$(find_part_by_name modem_a || find_part_by_name modem_b || find_part_by_name modem)"
+    mount -o ro,noatime "$modem_part" /firmware
     echo -n 1 > /sys/kernel/boot_adsp/boot
     sleep 3
     if [[ "$(cat /sys/class/subsys/subsys_adsp/device/subsys*/state)" != "ONLINE" ]]; then
         echo "Failed to boot aDSP!"
         exit 1
     fi
+    umount /firmware
 fi
 
 cat /proc/interrupts > /tmp/pre_bench_interrupts.txt
